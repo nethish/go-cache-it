@@ -11,7 +11,7 @@ import (
 type LRUCache[K comparable, V any] struct {
 	cache map[K]*Value[V]
 	size  int
-	list  list.List
+	list  *list.List
 	addr  map[K]*list.Element
 	mu    sync.RWMutex
 }
@@ -19,7 +19,7 @@ type LRUCache[K comparable, V any] struct {
 func NewLRU[K comparable, V any](size int) *LRUCache[K, V] {
 	return &LRUCache[K, V]{
 		size:  size,
-		list:  *list.New(),
+		list:  list.New(),
 		addr:  make(map[K]*list.Element),
 		cache: make(map[K]*Value[V]),
 		mu:    sync.RWMutex{},
@@ -48,9 +48,7 @@ func (l *LRUCache[K, V]) PutWithExp(key K, value V, dur time.Duration) {
 		expiration: expiration,
 	}
 
-	l.PrintList()
 	l.list.PushFront(key)
-	l.PrintList()
 	l.addr[key] = l.list.Front()
 
 	return
@@ -79,7 +77,6 @@ func (l *LRUCache[K, V]) Get(key K) (value V, err error) {
 
 	element := l.addr[key]
 	l.list.MoveToFront(element)
-	fmt.Println(l.list.Len())
 	return v.v, nil
 }
 

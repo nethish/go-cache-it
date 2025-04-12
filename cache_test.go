@@ -52,3 +52,12 @@ func BenchmarkCachePutWithExp(b *testing.B) {
 		c.PutWithExp(i, i, time.Second)
 	}
 }
+
+func BenchmarkParallelPut(b *testing.B) {
+	c := NewSingleCache()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			c.Put("key", "value")
+		}
+	})
+}

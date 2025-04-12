@@ -8,46 +8,46 @@ import (
 
 var ErrNoEntry = errors.New("ErrNoEntry")
 
-type Value struct {
+type Value[T any] struct {
 	expiration time.Time
-	v          any
+	v          T
 }
 
-func (v *Value) Expired() bool {
+func (v *Value[T]) Expired() bool {
 	if v.expiration.IsZero() {
 		return false
 	}
 	return time.Now().After(v.expiration)
 }
 
-type SingleCache struct {
-	cache map[any]Value
+type SingleCache[K comparable, V any] struct {
+	cache map[K]Value[V]
 	mu    sync.RWMutex
 }
 
-func NewSingleCache() *SingleCache {
-	return &SingleCache{
-		cache: make(map[any]Value),
+func NewSingleCache[K comparable, V any]() *SingleCache[K, V] {
+	return &SingleCache[K, V]{
+		cache: make(map[K]Value[V]),
 		mu:    sync.RWMutex{},
 	}
 }
 
-func (c *SingleCache) Put(k any, v any) {
+func (c *SingleCache[K, V]) Put(k K, v V) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	val := Value{
+	val := Value[V]{
 		v:          v,
 		expiration: time.Time{}, // Zero means no expiry
 	}
 	c.cache[k] = val
 }
 
-func (c *SingleCache) PutWithExp(k, v any, dur time.Duration) {
+func (c *SingleCache[K, V]) PutWithExp(k K, v V, dur time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	val := Value{
+	val := Value[V]{
 		expiration: time.Now().Add(dur), // Zero means no expiry
 		v:          v,
 	}
@@ -55,7 +55,7 @@ func (c *SingleCache) PutWithExp(k, v any, dur time.Duration) {
 }
 
 // Upsert returns true if it writes the value to cache, and false if key already exists
-func (c *SingleCache) Upsert(k, v any) bool {
+func (c *SingleCache[K, V]) Upsert(k K, v V) bool {
 	_, err := c.Get(k)
 	if errors.Is(err, ErrNoEntry) {
 		c.Put(k, v)
@@ -65,7 +65,7 @@ func (c *SingleCache) Upsert(k, v any) bool {
 	return false
 }
 
-func (c *SingleCache) Get(k any) (any, error) {
+func (c *SingleCache[K, V]) Get(k K) (any, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -81,7 +81,7 @@ func (c *SingleCache) Get(k any) (any, error) {
 	return val.v, nil
 }
 
-func (c *SingleCache) Delete(k any) {
+func (c *SingleCache[K, V]) Delete(k K) {
 	_, err := c.Get(k)
 	if errors.Is(err, ErrNoEntry) {
 		return

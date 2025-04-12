@@ -7,7 +7,7 @@ import (
 )
 
 func TestCachePutGet(t *testing.T) {
-	c := NewSingleCache()
+	c := NewSingleCache[string, string]()
 
 	c.Put("a", "b")
 	v, err := c.Get("a")
@@ -21,7 +21,7 @@ func TestCachePutGet(t *testing.T) {
 }
 
 func TestCachePutWithExp(t *testing.T) {
-	c := NewSingleCache()
+	c := NewSingleCache[string, string]()
 
 	k := "a"
 	v := "b"
@@ -37,7 +37,7 @@ func TestCachePutWithExp(t *testing.T) {
 
 func BenchmarkCachePut(b *testing.B) {
 	b.ReportAllocs()
-	c := NewSingleCache()
+	c := NewSingleCache[int, int]()
 
 	for i := range b.N {
 		c.Put(i, i)
@@ -46,7 +46,7 @@ func BenchmarkCachePut(b *testing.B) {
 
 func BenchmarkCachePutWithExp(b *testing.B) {
 	b.ReportAllocs()
-	c := NewSingleCache()
+	c := NewSingleCache[int, int]()
 
 	for i := range b.N {
 		c.PutWithExp(i, i, time.Second)
@@ -54,7 +54,7 @@ func BenchmarkCachePutWithExp(b *testing.B) {
 }
 
 func BenchmarkParallelPut(b *testing.B) {
-	c := NewSingleCache()
+	c := NewSingleCache[string, string]()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			c.Put("key", "value")
